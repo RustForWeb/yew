@@ -130,7 +130,8 @@ mod feat_csr {
     use super::*;
 
     impl NodeRef {
-        pub(crate) fn set(&self, new_ref: Option<Node>) {
+        /// Set the node reference.
+        pub fn set(&self, new_ref: Option<Node>) {
             let mut inner = self.0.borrow_mut();
             inner.node = new_ref;
         }
