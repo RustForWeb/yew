@@ -189,3 +189,9 @@ where
 pub fn use_node_ref() -> NodeRef {
     (*use_state(NodeRef::default)).clone()
 }
+
+/// This hook is used for composing multiple [`NodeRef`]s.
+#[hook]
+pub fn use_composed_ref(node_refs: &[NodeRef]) -> NodeRef {
+    (*use_state(|| NodeRef::compose(node_refs))).clone()
+}

@@ -88,11 +88,15 @@ impl IntoHtmlResult for Html {
 /// ## Relevant examples
 /// - [Node Refs](https://github.com/yewstack/yew/tree/master/examples/node_refs)
 #[derive(Default, Clone)]
-pub struct NodeRef(Rc<RefCell<NodeRefInner>>);
+pub struct NodeRef {
+    inner: Rc<RefCell<NodeRefInner>>,
+    #[allow(dead_code)]
+    composed_refs: Option<Vec<NodeRef>>,
+}
 
 impl PartialEq for NodeRef {
     fn eq(&self, other: &Self) -> bool {
-        self.0.as_ptr() == other.0.as_ptr()
+        self.inner.as_ptr() == other.inner.as_ptr()
     }
 }
 
@@ -112,9 +116,17 @@ struct NodeRefInner {
 }
 
 impl NodeRef {
+    /// Compose multiple node references.
+    pub(crate) fn compose(node_refs: &[NodeRef]) -> Self {
+        NodeRef {
+            inner: Default::default(),
+            composed_refs: Some(node_refs.to_vec()),
+        }
+    }
+
     /// Get the wrapped Node reference if it exists
     pub fn get(&self) -> Option<Node> {
-        let inner = self.0.borrow();
+        let inner = self.inner.borrow();
         inner.node.clone()
     }
 
@@ -131,8 +143,14 @@ mod feat_csr {
 
     impl NodeRef {
         pub(crate) fn set(&self, new_ref: Option<Node>) {
-            let mut inner = self.0.borrow_mut();
-            inner.node = new_ref;
+            let mut inner = self.inner.borrow_mut();
+            inner.node = new_ref.clone();
+
+            if let Some(composed_refs) = &self.composed_refs {
+                for composed_ref in composed_refs {
+                    composed_ref.set(new_ref.clone());
+                }
+            }
         }
     }
 }
